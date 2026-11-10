@@ -246,6 +246,47 @@ The split is off by default, so upgrading changes nothing until you enable it.
 Unset `PI_LANGFUSE_SPLIT_REASONING_TOKENS` (or set it to `false`) to go back;
 traces already ingested keep their buckets.
 
+### Subscription rate limits
+
+Claude (Pro/Max, signed in with OAuth) and Codex (ChatGPT plans) report how much
+of each usage window is spent on every response: Anthropic in
+`anthropic-ratelimit-unified-*` headers, Codex in `x-codex-*` headers or, on the
+WebSocket transport, a `codex.rate_limits` stream event. Opt in to record them
+as scores:
+
+```bash
+export PI_LANGFUSE_RATE_LIMIT_SCORES=true
+```
+
+Or persist it in `config.json`:
+
+```json
+{ "capture": { "PI_LANGFUSE_RATE_LIMIT_SCORES": "true" } }
+```
+
+Each window becomes a NUMERIC score on the generation that received it (on the
+session when no generation is open, e.g. cache warming):
+
+| | |
+|---|---|
+| name | `rl.<provider>.<account>.<window>`, e.g. `rl.claude.3f9a1c2e.5h`, `rl.codex.b81d07aa.7d`, `rl.codex.b81d07aa.bengalfox.5h` |
+| value | share of the window used, in percent (may exceed 100) |
+| timestamp | when the provider answered |
+| metadata | `resets_at` (unix seconds), `window_s`, `status` (`ok` / `warning` / `exhausted`), `label`, `binding` (`true` on the window that limits the account now), `plan` (Codex), `account_label` (the ChatGPT email), `source`, `model`, `host` |
+
+`<account>` is the first 8 hex digits of sha256 of the Anthropic organization id
+(`anthropic-organization-id` response header) or the ChatGPT account id
+(pi's `auth.json`), `main` when neither is known. A window is written when its
+rounded percentage, reset time or status changes, and again after
+`PI_LANGFUSE_RATE_LIMIT_HEARTBEAT` seconds (default 600, `0` disables) so readers
+can tell live values from stale ones. Every pi process keeps its own record of
+what it wrote, so parallel sessions may write the same value twice; readers should
+keep the highest value per window (`resets_at`).
+
+Read them back with `GET /api/public/v3/scores?name=rl.claude.3f9a1c2e.5h&limit=1`
+(latest value) or chart them with `GET /api/public/v2/metrics` on the
+`scores-numeric` view (`max` of `value` by `name`).
+
 ### Method 3: Persistent `config.json`
 
 Create or update `~/.pi/agent/pi-langfuse/config.json`:

@@ -44,6 +44,7 @@ import {
   startToolObservation,
   finishToolObservation,
 } from "./src/handlers/tool.js";
+import { recordRateLimitsFromResponse, recordRateLimitsFromStreamEvent } from "./src/handlers/rate-limits.js";
 
 // ============================================
 // Extension
@@ -154,10 +155,12 @@ export default async function (pi: ExtensionAPI) {
 
   pi.on("after_provider_response", async (event, ctx) => withSession(ctx, async () => {
     updateGenerationMetadata(asRecord(event));
+    recordRateLimitsFromResponse(asRecord(event), ctx?.model?.id);
   }));
 
   pi.on("provider_stream_event", (event, ctx) => withSession(ctx, () => {
     recordGenerationIdentity(asRecord(event));
+    recordRateLimitsFromStreamEvent(asRecord(event));
   }));
 
   pi.on("message_update", async (event, ctx) => withSession(ctx, async () => {

@@ -7,6 +7,7 @@ import { forceShutdownRuntime } from "./langfuse.js";
 import { createCapturePolicy, type EnvLike } from "./capture-policy.js";
 import { createPayloadLimits } from "./limits.js";
 import { createUsageOptions } from "./usage-options.js";
+import { createRateLimitOptions } from "./rate-limits.js";
 
 const MAX_LANGFUSE_USER_ID_LENGTH = 200;
 
@@ -37,6 +38,7 @@ export function loadConfigFromFile(path = CONFIG_PATH, env: EnvLike = process.en
           capturePolicy: createCapturePolicy(captureSource),
           limits: createPayloadLimits(env),
           usage: createUsageOptions(captureSource),
+          rateLimits: createRateLimitOptions(captureSource),
         };
       }
     } catch (e) {
@@ -62,6 +64,7 @@ export function loadConfigFromEnv(env: EnvLike = process.env as EnvLike): Config
     capturePolicy: createCapturePolicy(env),
     limits: createPayloadLimits(env),
     usage: createUsageOptions(env),
+    rateLimits: createRateLimitOptions(env),
   };
 }
 

@@ -325,11 +325,12 @@ async function flushPendingScores(rt: LangfuseRuntime, signal: AbortSignal): Pro
     try {
       const errors = await ingestBatch(
         rt,
-        scores.map((score) => ({
+        scores.map(({ timestamp, ...body }) => ({
           type: "score-create",
           id: randomUUID(),
-          timestamp: nowIso(),
-          body: score,
+          // Langfuse stores the event's timestamp as the score's: keep when it happened, not when it was flushed.
+          timestamp: timestamp ?? nowIso(),
+          body,
         })),
         signal,
       );
@@ -1023,7 +1024,11 @@ export function __setRuntimeForTest(rt: LangfuseRuntime | null, timeoutMs = DEFA
   activeSessions.clear();
 }
 
-export async function sendScore(name: string, value: number, options: { traceId?: string; observationId?: string } = {}) {
+export async function sendScore(
+  name: string,
+  value: number,
+  options: { traceId?: string; observationId?: string; metadata?: Record<string, string>; timestamp?: string } = {},
+) {
   try {
     const rt = await getRuntime();
     const score: PendingScore = {
@@ -1031,11 +1036,13 @@ export async function sendScore(name: string, value: number, options: { traceId?
       value,
       dataType: name === "session_had_errors" || name === "tool_is_error" ? "BOOLEAN" : "NUMERIC",
       traceId: options.traceId,
-      observationId: options.observationId,
+      observationId: options.traceId ? options.observationId : undefined,
       sessionId: options.traceId ? undefined : state.currentSessionId || undefined,
       ...(process.env.LANGFUSE_TRACING_ENVIRONMENT
         ? { environment: process.env.LANGFUSE_TRACING_ENVIRONMENT }
         : {}),
+      ...(options.metadata ? { metadata: options.metadata } : {}),
+      ...(options.timestamp ? { timestamp: options.timestamp } : {}),
     };
     if (!rt.pendingScores) {
       return;

@@ -1,6 +1,7 @@
 import type { CapturePolicy } from "./capture-policy.js";
 import type { PayloadLimits } from "./limits.js";
 import type { UsageOptions } from "./usage-options.js";
+import type { RateLimitOptions } from "./rate-limits.js";
 
 export interface Config {
   publicKey: string;
@@ -10,6 +11,7 @@ export interface Config {
   capturePolicy?: CapturePolicy;
   limits?: PayloadLimits;
   usage?: UsageOptions;
+  rateLimits?: RateLimitOptions;
 }
 
 export interface LangfuseObservation {
@@ -71,6 +73,9 @@ export interface PendingScore {
   value: number;
   dataType?: "NUMERIC" | "BOOLEAN";
   environment?: string;
+  metadata?: Record<string, string>;
+  /** When it happened (ISO): sent as the ingestion event's timestamp, which Langfuse stores as the score's. Not part of the body. */
+  timestamp?: string;
 }
 
 export interface LangfuseRuntimeConfig {
