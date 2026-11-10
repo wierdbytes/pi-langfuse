@@ -277,7 +277,7 @@ session when no generation is open, e.g. cache warming):
 `<account>` is the first 8 hex digits of sha256 of the Anthropic organization id
 (`anthropic-organization-id` response header) or the ChatGPT account id
 (pi's `auth.json`), `main` when neither is known. A window is written when its
-rounded percentage, reset time or status changes, and again after
+percentage (to a tenth of a percent), reset time or status changes, and again after
 `PI_LANGFUSE_RATE_LIMIT_HEARTBEAT` seconds (default 600, `0` disables) so readers
 can tell live values from stale ones. Every pi process keeps its own record of
 what it wrote, so parallel sessions may write the same value twice; readers should

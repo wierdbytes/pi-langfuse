@@ -14,7 +14,7 @@ import { state } from "./state.js";
  * (WebSocket). Each window becomes a NUMERIC score
  * `rl.<provider>.<account>.<window>` whose value is the share used in percent,
  * with the reset time and status in its metadata. A score is only written when
- * the rounded percentage, the reset time or the status changes, plus a
+ * the percentage (to a tenth), the reset time or the status changes, plus a
  * heartbeat, so a busy session adds a handful of scores per hour.
  */
 
@@ -421,7 +421,8 @@ export function rateLimitScores(
   for (const w of reading.windows) {
     const name = rateLimitScoreName(reading.provider, account.slug, w.id);
     const status = w.status ?? (reading.status === "exhausted" && reading.binding === w.id ? "exhausted" : reading.status ? "ok" : undefined);
-    const next: Written = { percent: Math.round(w.usedPercent), resetsAt: w.resetsAt, status, plan: reading.plan, at: now };
+    // Tenths of a percent: Codex reports fractions, Anthropic whole percents (two-decimal shares).
+    const next: Written = { percent: Math.round(w.usedPercent * 10) / 10, resetsAt: w.resetsAt, status, plan: reading.plan, at: now };
     if (!changed(lastWritten.get(name), next, heartbeatMs)) continue;
     lastWritten.set(name, next);
     const metadata: Record<string, string> = {

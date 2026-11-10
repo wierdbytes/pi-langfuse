@@ -155,10 +155,10 @@ test("scores are written on change and on heartbeat only", () => {
   // Same values a minute later: nothing to write.
   assert.equal(rateLimitScores(reading, account, { now: 60_000, heartbeatMs: 600_000 }).length, 0);
 
-  // 5h moves by less than a percent: still nothing; by a percent: only 5h.
-  const nudged = { ...reading, windows: reading.windows.map((w) => (w.id === "5h" ? { ...w, usedPercent: 67.3 } : w)) };
+  // 5h moves by less than a tenth of a percent: still nothing; by a tenth: only 5h.
+  const nudged = { ...reading, windows: reading.windows.map((w) => (w.id === "5h" ? { ...w, usedPercent: 67.04 } : w)) };
   assert.equal(rateLimitScores(nudged, account, { now: 120_000, heartbeatMs: 600_000 }).length, 0);
-  const moved = { ...reading, windows: reading.windows.map((w) => (w.id === "5h" ? { ...w, usedPercent: 68 } : w)) };
+  const moved = { ...reading, windows: reading.windows.map((w) => (w.id === "5h" ? { ...w, usedPercent: 67.1 } : w)) };
   assert.deepEqual(rateLimitScores(moved, account, { now: 180_000, heartbeatMs: 600_000 }).map((s) => s.metadata.window), ["5h"]);
 
   // The heartbeat rewrites what has not changed for its interval.
